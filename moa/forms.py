@@ -34,4 +34,4 @@ class SettingsForm(FlaskForm):
 
 
 class MastodonIDForm(FlaskForm):
-    mastodon_id = StringField('Enter your Mastodon ID', validators=[DataRequired(), Email()])
+    mastodon_id = StringField('Enter your Mastodon ID', validators=[DataRequired()])
