@@ -114,26 +114,17 @@ def options():
 
     if form.validate_on_submit():
 
-        bridge = db.session.query(Bridge).filter_by(id=session['bridge_id']).first()
-
-        if bridge:
-            app.logger.debug("Existing settings found")
-            form.populate_obj(bridge.t_settings)
-
+        if 'bridge_id' in session:
+            bridge = db.session.query(Bridge).filter_by(id=session['bridge_id']).first()
         else:
-            bridge = Bridge()
-            settings = TSettings()
-            form.populate_obj(settings)
+            flash('ERROR: Please log in to an account')
+            return redirect(url_for('index'))
+
+        app.logger.debug("Existing settings found")
+        form.populate_obj(bridge.t_settings)
 
         bridge.enabled = form.enabled.data
-        # bridge.t_settings = settings
         bridge.updated = datetime.now()
-        bridge.twitter_oauth_token = session['twitter']['oauth_token']
-        bridge.twitter_oauth_secret = session['twitter']['oauth_token_secret']
-        bridge.twitter_handle = session['twitter']['screen_name']
-        bridge.mastodon_access_code = session['mastodon']['access_code']
-        bridge.mastodon_user = session['mastodon']['username']
-        bridge.mastodon_host = get_or_create_host(session['mastodon']['host'])
 
         if not bridge.mastodon_host:
             flash(f"There was a problem connecting to {session['mastodon']['host']}")
@@ -156,13 +147,13 @@ def options():
 
 def catch_up_twitter(bridge):
 
-    if bridge.twitter_last_id == 0:
+    if bridge.twitter_last_id == 0 and bridge.twitter_oauth_token:
         # get twitter ID
         twitter_api = twitter.Api(
             consumer_key=app.config['TWITTER_CONSUMER_KEY'],
             consumer_secret=app.config['TWITTER_CONSUMER_SECRET'],
-            access_token_key=session['twitter']['oauth_token'],
-            access_token_secret=session['twitter']['oauth_token_secret'],
+            access_token_key=bridge.twitter_oauth_token,
+            access_token_secret=bridge.twitter_oauth_secret,
             tweet_mode='extended'  # Allow tweets longer than 140 raw characters
         )
         try:
@@ -182,8 +173,8 @@ def catch_up_mastodon(bridge):
     if bridge.mastodon_last_id == 0:
 
         # get mastodon ID
-        api = mastodon_api(session['mastodon']['host'],
-                           access_code=session['mastodon']['access_code'])
+        api = mastodon_api(bridge.mastodon_host.hostname,
+                           access_code=bridge.mastodon_access_code)
 
         bridge.mastodon_account_id = api.account_verify_credentials()["id"]
 
@@ -207,8 +198,7 @@ def delete():
         bridge = db.session.query(Bridge).filter_by(id=session['bridge_id']).first()
 
         if bridge:
-            app.logger.info(
-                f"Deleting settings for {session['mastodon']['username']} {session['twitter']['screen_name']}")
+            app.logger.info(f"Deleting settings for Bridge {bridge.id}")
             settings = bridge.t_settings
             db.session.delete(bridge)
             db.session.delete(settings)
@@ -423,15 +413,15 @@ def mastodon_oauthorized():
         else:
             bridge = get_or_create_bridge()
 
-            bridge.mastodon_access_code = access_code
-            bridge.mastodon_user = username
-            bridge.mastodon_host = get_or_create_host(host)
+        bridge.mastodon_access_code = access_code
+        bridge.mastodon_user = username
+        bridge.mastodon_host = get_or_create_host(host)
 
-            db.session.commit()
+        db.session.commit()
 
-            catch_up_mastodon(bridge)
+        catch_up_mastodon(bridge)
 
-            email_bridge_details(app, bridge)
+        email_bridge_details(app, bridge)
 
     return redirect(url_for('index'))
 
