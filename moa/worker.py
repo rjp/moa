@@ -72,6 +72,8 @@ except exc.SQLAlchemyError as e:
 
 session = Session(engine)
 
+lockfile = Path(f'worker_{args.worker}.lock')
+
 
 def check_worker_stop():
     if Path('worker_stop').exists():
@@ -79,12 +81,15 @@ def check_worker_stop():
         session.add(worker_stat)
         session.commit()
         session.close()
+        try:
+            lockfile.unlink()
+        except FileNotFoundError:
+            pass
+
         exit(0)
 
 
 check_worker_stop()
-
-lockfile = Path(f'worker_{args.worker}.lock')
 
 if Path(lockfile).exists():
     l.info("Worker lock found")
