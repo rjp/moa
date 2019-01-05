@@ -416,16 +416,17 @@ def mastodon_oauthorized():
 
         else:
             bridge = get_or_create_bridge()
-            bridge.mastodon_access_code = access_code
-            bridge.mastodon_user = username
             bridge.mastodon_host = get_or_create_host(host)
             bridge.mastodon_account_id = account_id
-
+            email_bridge_details(app, bridge)
             db.session.commit()
 
+        if not bridge.mastodon_access_code:
+            # in case they deactivated this account and are logging in again
+            bridge.mastodon_access_code = access_code
+            bridge.mastodon_user = username
             catch_up_mastodon(bridge)
-
-            email_bridge_details(app, bridge)
+            db.session.commit()
 
     return redirect(url_for('index'))
 
@@ -521,19 +522,17 @@ def deactivate():
         if atype == 'twitter':
             bridge.twitter_oauth_secret = None
             bridge.twitter_oauth_token = None
-            bridge.twitter_last_id = None
+            bridge.twitter_last_id = 0
             bridge.twitter_handle = None
 
         elif atype == 'mastodon':
             bridge.mastodon_access_code = None
-            bridge.mastodon_last_id = None
-            bridge.mastodon_account_id = None
+            bridge.mastodon_last_id = 0
             bridge.mastodon_user = None
-            bridge.mastodon_host_id = None
 
         elif atype == 'instagram':
             bridge.instagram_access_code = None
-            bridge.instagram_last_id = None
+            bridge.instagram_last_id = 0
             bridge.instagram_account_id = None
             bridge.instagram_handle = None
 
