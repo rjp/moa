@@ -126,10 +126,6 @@ def options():
         bridge.enabled = form.enabled.data
         bridge.updated = datetime.now()
 
-        if not bridge.mastodon_host:
-            flash(f"There was a problem connecting to {session['mastodon']['host']}")
-            return redirect(url_for('index'))
-
         catch_up_twitter(bridge)
         catch_up_mastodon(bridge)
 
@@ -505,6 +501,37 @@ def stats():
 
     return render_template('stats.html.j2',
                            hours=hours)
+
+
+@app.route('/deactivate_account')
+def deactivate():
+    atype = request.args.get('type', None)
+
+    if 'bridge_id' in session:
+        bridge = get_or_create_bridge(bridge_id=session['bridge_id'])
+
+        if atype == 'twitter':
+            bridge.twitter_oauth_secret = None
+            bridge.twitter_oauth_token = None
+            bridge.twitter_last_id = None
+            bridge.twitter_handle = None
+
+        elif atype == 'mastodon':
+            bridge.mastodon_access_code = None
+            bridge.mastodon_last_id = None
+            bridge.mastodon_account_id = None
+            bridge.mastodon_user = None
+            bridge.mastodon_host_id = None
+
+        elif atype == 'instagram':
+            bridge.instagram_access_code = None
+            bridge.instagram_last_id = None
+            bridge.instagram_account_id = None
+            bridge.instagram_handle = None
+
+        db.session.commit()
+
+    return redirect(url_for('index'))
 
 
 def timespan(hours):

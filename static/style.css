@@ -58,6 +58,11 @@ a:link {
     margin-right: 6px;
 }
 
+.red {
+    font-weight: bold;
+    color: red;
+}
+
 input,
 select {
     -webkit-appearance: none;

@@ -3,7 +3,7 @@
 
     {#    Mastodon    #}
     {% if g.bridge.mastodon_account_id %}
-        <p>Mastodon: <strong>@{{ g.bridge.mastodon_user }}</strong></p>
+        <p>Mastodon: <strong>@{{ g.bridge.mastodon_user }}</strong> <a class="red" href="{{ url_for('deactivate', type='mastodon') }}">[X]</a></p>
     {% else %}
         <form action="{{ url_for('mastodon_login') }}" method="POST">
             [ ] {{ mform.mastodon_id.label }}:{{ mform.mastodon_id(placeholder='@yourid@mastodon.instance', size=30) }}
@@ -14,14 +14,14 @@
 
     {#    Twitter    #}
     {% if g.bridge.twitter_handle %}
-        <p>Twitter: <strong>{{ g.bridge.twitter_handle }}</strong></p>
+        <p>Twitter: <strong>{{ g.bridge.twitter_handle }}</strong> <a class="red" href="{{ url_for('deactivate', type='twitter') }}">[X]</a></p>
     {% else %}
         <p><a href="{{ url_for('twitter_login') }}">[ ] Connect to Twitter</a></p>
     {% endif %}
 
     {#    Instagram    #}
     {% if g.bridge.instagram_access_code %}
-        <p>Instagram: <strong>{{ g.bridge.instagram_handle }}</strong></p>
+        <p>Instagram: <strong>{{ g.bridge.instagram_handle }}</strong> <a class="red" href="{{ url_for('deactivate', type='instagram') }}">[X]</a></p>
 
     {% else %}
         <p><a href="{{ url_for('instagram_activate') }}">[ ] Connect to Instagram</a></p>
@@ -38,9 +38,8 @@
             <li>{{ form.enabled(checked=enabled) }}{{ form.enabled.label }}</li>
             <li>{{ form.conditional_posting }}{{ form.conditional_posting.label }}</li>
 
+            {% if g.bridge.twitter_handle and g.bridge.mastodon_user %}
             <hr>
-            {% if not g.bridge.twitter_handle %}<p class="message">Requires a Twitter account</p>{% endif %}
-            {% if not g.bridge.mastodon_user %}<p class="message">Requires a Mastodon account</p>{% endif %}
 
             <li>{{ form.post_to_twitter }}{{ form.post_to_twitter.label }}</li>
             <li>{{ form.post_private_to_twitter }}{{ form.post_private_to_twitter.label }}</li>
@@ -50,8 +49,6 @@
             <li>{{ form.post_sensitive_behind_link }}{{ form.post_sensitive_behind_link.label }} {{ form.sensitive_link_text(size=14) }}</li>
 
             <hr>
-            {% if not g.bridge.twitter_handle %}<p class="message">Requires a Twitter account</p>{% endif %}
-            {% if not g.bridge.mastodon_user %}<p class="message">Requires a Mastodon account</p>{% endif %}
             <li>{{ form.post_to_mastodon }}{{ form.post_to_mastodon.label }}</li>
             <li>{{ form.toot_visibility.label }}: {{ form.toot_visibility }}</li>
             <li>{{ form.post_rts_to_mastodon }}{{ form.post_rts_to_mastodon.label }}</li>
@@ -59,6 +56,7 @@
             <div>NOTE: Retweets are always posted as 'Unlisted'.</div>
             <li>{{ form.tweets_behind_cw }}{{ form.tweets_behind_cw.label }} {{ form.tweet_cw_text }}</li>
             <div>NOTE: Tweets containing "CW: phrase" will have a Content Warning when converted to a toot.</div>
+            {% endif %}
 
             {% if g.bridge.instagram_access_code %}
                 <hr>
