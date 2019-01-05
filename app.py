@@ -86,16 +86,13 @@ def index():
     mform = MastodonIDForm()
     settings = TSettings()
     enabled = True
-    found_settings = False
 
     if 'bridge_id' in session:
         bridge = db.session.query(Bridge).filter_by(id=session['bridge_id']).first()
 
         if bridge:
             g.bridge = bridge
-            found_settings = True
             settings = bridge.t_settings
-            enabled = bridge.enabled
             app.logger.debug(f"Existing settings found: {enabled} {settings.__dict__}")
 
     form = SettingsForm(obj=settings)
@@ -103,8 +100,6 @@ def index():
     return render_template('index.html.j2',
                            form=form,
                            mform=mform,
-                           enabled=enabled,
-                           found_settings=found_settings
                            )
 
 
