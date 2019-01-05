@@ -97,6 +97,9 @@ def index():
 
     form = SettingsForm(obj=settings)
 
+    if not bridge.mastodon_access_code or not bridge.twitter_oauth_token:
+        form.remove_masto_and_twitter_fields()
+
     return render_template('index.html.j2',
                            form=form,
                            mform=mform,
@@ -105,15 +108,19 @@ def index():
 
 @app.route('/options', methods=["POST"])
 def options():
+
+    if 'bridge_id' in session:
+        bridge = db.session.query(Bridge).filter_by(id=session['bridge_id']).first()
+    else:
+        flash('ERROR: Please log in to an account')
+        return redirect(url_for('index'))
+
     form = SettingsForm()
 
-    if form.validate_on_submit():
+    if not bridge.mastodon_access_code or not bridge.twitter_oauth_token:
+        form.remove_masto_and_twitter_fields()
 
-        if 'bridge_id' in session:
-            bridge = db.session.query(Bridge).filter_by(id=session['bridge_id']).first()
-        else:
-            flash('ERROR: Please log in to an account')
-            return redirect(url_for('index'))
+    if form.validate_on_submit():
 
         app.logger.debug("Existing settings found")
         form.populate_obj(bridge.t_settings)
@@ -161,7 +168,7 @@ def catch_up_twitter(bridge):
 
 
 def catch_up_mastodon(bridge):
-    if bridge.mastodon_last_id == 0:
+    if bridge.mastodon_last_id == 0 and bridge.mastodon_access_code:
 
         # get mastodon ID
         api = mastodon_api(bridge.mastodon_host.hostname,
