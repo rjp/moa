@@ -108,6 +108,9 @@ if Path(lockfile).exists():
 with lockfile.open('wt') as f:
     f.write(str(psutil.Process().pid))
 
+if not c.SEND:
+    l.warning("SENDING IS NOT ENABLED")
+
 bridges = session.query(Bridge).filter_by(enabled=True)
 
 if not c.DEVELOPMENT:
@@ -301,47 +304,51 @@ for bridge in bridges:
     # Post Toots to Twitter
     #
 
-    if bridge.twitter_oauth_token and bridge.mastodon_access_code:
-        l.debug(f"{bridge.id}: M - {bridge.mastodon_user}@{mastodonhost.hostname}")
-
-        if bridge.t_settings.post_to_twitter_enabled and len(new_toots) != 0:
-            l.info(f"{len(new_toots)} new toots found")
-
+    if bridge.twitter_oauth_token:
         tweet_poster = TweetPoster(c.SEND, session, twitter_api, bridge)
 
-        if bridge.t_settings.post_to_twitter_enabled and len(new_toots) > 0:
+        if bridge.mastodon_access_code:
+            l.debug(f"{bridge.id}: M - {bridge.mastodon_user}@{mastodonhost.hostname}")
 
-            for toot in new_toots:
+            if bridge.t_settings.post_to_twitter_enabled and len(new_toots) != 0:
+                l.info(f"{len(new_toots)} new toots found")
 
-                t = Toot(bridge.t_settings, toot, c)
+            tweet_poster = TweetPoster(c.SEND, session, twitter_api, bridge)
 
-                result = tweet_poster.post(t)
+            if bridge.t_settings.post_to_twitter_enabled and len(new_toots) > 0:
 
-                if result:
-                    worker_stat.add_toot()
+                for toot in new_toots:
+
+                    t = Toot(bridge.t_settings, toot, c)
+
+                    result = tweet_poster.post(t)
+
+                    if result:
+                        worker_stat.add_toot()
 
     #
     # Post Tweets to Mastodon
     #
 
-    if bridge.twitter_oauth_token and bridge.mastodon_access_code:
-        l.debug(f"{bridge.id}: T - @{bridge.twitter_handle}")
-
-        if bridge.t_settings.post_to_mastodon_enabled and len(new_tweets) != 0:
-            l.info(f"{len(new_tweets)} new tweets found")
-
+    if bridge.mastodon_access_code:
         toot_poster = TootPoster(c.SEND, session, mast_api, bridge)
 
-        if bridge.t_settings.post_to_mastodon_enabled and len(new_tweets) > 0:
+        if bridge.twitter_oauth_token:
+            l.debug(f"{bridge.id}: T - @{bridge.twitter_handle}")
 
-            for status in new_tweets:
+            if bridge.t_settings.post_to_mastodon_enabled and len(new_tweets) != 0:
+                l.info(f"{len(new_tweets)} new tweets found")
 
-                tweet = Tweet(bridge.t_settings, status, twitter_api)
+            if bridge.t_settings.post_to_mastodon_enabled and len(new_tweets) > 0:
 
-                result = toot_poster.post(tweet)
+                for status in new_tweets:
 
-                if result:
-                    worker_stat.add_tweet()
+                    tweet = Tweet(bridge.t_settings, status, twitter_api)
+
+                    result = toot_poster.post(tweet)
+
+                    if result:
+                        worker_stat.add_tweet()
 
     #
     # Post Instagram
