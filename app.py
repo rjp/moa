@@ -242,14 +242,15 @@ def twitter_oauthorized():
                 pass  # this should be an error
         else:
             bridge = get_or_create_bridge()
-            bridge.twitter_oauth_token = resp['oauth_token']
-            bridge.twitter_oauth_secret = resp['oauth_token_secret']
-            bridge.twitter_handle = resp['screen_name']
-            db.session.commit()
 
-            catch_up_twitter(bridge)
+        bridge.twitter_oauth_token = resp['oauth_token']
+        bridge.twitter_oauth_secret = resp['oauth_token_secret']
+        bridge.twitter_handle = resp['screen_name']
+        db.session.commit()
 
-            email_bridge_details(app, bridge)
+        catch_up_twitter(bridge)
+
+        email_bridge_details(app, bridge)
 
     return redirect(url_for('index'))
 
