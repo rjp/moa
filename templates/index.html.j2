@@ -2,7 +2,7 @@
 {% block body %}
 
     {#    Mastodon    #}
-    {% if g.bridge.mastodon_account_id %}
+    {% if g.bridge.mastodon_access_code %}
         <p>Mastodon: <strong>@{{ g.bridge.mastodon_user }}@{{ g.bridge.mastodon_host.hostname }}</strong> <a class="red" href="{{ url_for('deactivate', type='mastodon') }}">[X]</a></p>
     {% else %}
         <form action="{{ url_for('mastodon_login') }}" method="POST">
@@ -12,9 +12,11 @@
         </form>
     {% endif %}
 
+    {% if g.bridge.mastodon_access_code %}
+
     {#    Twitter    #}
-    {% if g.bridge.twitter_handle %}
-        <p>Twitter: <strong>{{ g.bridge.twitter_handle }}</strong> <a class="red" href="{{ url_for('deactivate', type='twitter') }}">[X]</a></p>
+    {% if g.bridge.twitter_oauth_token %}
+        <p>Twitter: <strong>{{ g.bridge.twitter_oauth_token }}</strong> <a class="red" href="{{ url_for('deactivate', type='twitter') }}">[X]</a></p>
     {% else %}
         <p><a href="{{ url_for('twitter_login') }}">[ ] Connect to Twitter</a></p>
     {% endif %}
@@ -27,6 +29,7 @@
         <p><a href="{{ url_for('instagram_activate') }}">[ ] Connect to Instagram</a></p>
 
     {% endif %}
+    {% endif %}
 
 
     {% if g.bridge %}
@@ -34,11 +37,13 @@
     {#    Options    #}
     <form method="POST" action="{{ url_for('options') }}">
         <ul>
+            {% if g.bridge.twitter_oauth_token or g.bridge.instagram_access_code %}
             <hr>
             <li>{{ form.enabled(checked=g.bridge.enabled) }}{{ form.enabled.label }}</li>
             <li>{{ form.conditional_posting }}{{ form.conditional_posting.label }}</li>
+            {% endif %}
 
-            {% if g.bridge.twitter_handle and g.bridge.mastodon_user %}
+            {% if g.bridge.twitter_oauth_token and g.bridge.mastodon_access_code %}
             <hr>
 
             <li>{{ form.post_to_twitter }}{{ form.post_to_twitter.label }}</li>
@@ -60,25 +65,28 @@
 
             {% if g.bridge.instagram_access_code %}
                 <hr>
-                {% if g.bridge.twitter_handle %} <li>{{ form.instagram_post_to_twitter }}{{ form.instagram_post_to_twitter.label }}</li>{% endif %}
-                {% if g.bridge.mastodon_account_id %}<li>{{ form.instagram_post_to_mastodon }}{{ form.instagram_post_to_mastodon.label }}</li>{% endif %}
+                {% if g.bridge.twitter_oauth_token %} <li>{{ form.instagram_post_to_twitter }}{{ form.instagram_post_to_twitter.label }}</li>{% endif %}
+                {% if g.bridge.mastodon_access_code %}<li>{{ form.instagram_post_to_mastodon }}{{ form.instagram_post_to_mastodon.label }}</li>{% endif %}
                 <li>{{ form.instagram_include_link }}{{ form.instagram_include_link.label }}</li>
             {% endif %}
 
         </ul>
         {{ form.csrf_token }}
+        {% if g.bridge.twitter_oauth_token or g.bridge.instagram_access_code %}
         <input type="submit" value="Save">
+        {% endif %}
+
     </form>
 
+    {% if g.bridge.mastodon_access_code %}
     <form method="POST" action="{{ url_for('delete') }}">
-        <input type="submit" value="Delete">
+        <input style="background: red;" type="submit" value="Delete">
     </form>
-    {#    Logout    #}
 
-    <br><br>
     <form action="{{ url_for('logout') }}" method="GET">
         <input type="submit" value="Logout">
     </form>
+    {% endif %}
     {% endif %}
 
 {% endblock %}

@@ -86,6 +86,7 @@ def index():
     mform = MastodonIDForm()
     settings = TSettings()
     enabled = True
+    form = SettingsForm(obj=settings)
 
     if 'bridge_id' in session:
         bridge = db.session.query(Bridge).filter_by(id=session['bridge_id']).first()
@@ -95,10 +96,10 @@ def index():
             settings = bridge.t_settings
             app.logger.debug(f"Existing settings found: {enabled} {settings.__dict__}")
 
-    form = SettingsForm(obj=settings)
+            form = SettingsForm(obj=settings)
 
-    if not bridge.mastodon_access_code or not bridge.twitter_oauth_token:
-        form.remove_masto_and_twitter_fields()
+            if not bridge.mastodon_access_code or not bridge.twitter_oauth_token:
+                form.remove_masto_and_twitter_fields()
 
     return render_template('index.html.j2',
                            form=form,
