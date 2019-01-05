@@ -382,6 +382,7 @@ def mastodon_oauthorized():
         session.pop('mastodon_host', None)
 
         api = mastodon_api(host)
+        masto_host = get_or_create_host(host)
 
         try:
             access_code = api.log_in(
@@ -399,29 +400,32 @@ def mastodon_oauthorized():
         api.access_code = access_code
 
         try:
-            username = api.account_verify_credentials()["username"]
+            creds = api.account_verify_credentials()
 
         except MastodonUnauthorizedError as e:
             flash(f"There was a problem connecting to the mastodon server. The error was {e}")
             return redirect(url_for('index'))
 
-        if 'bridge_id' in session:
-            bridge = get_or_create_bridge(bridge_id=session['bridge_id'])
+        username = creds["username"]
+        account_id = creds["id"]
 
-            if not bridge:
-                pass  # this should be an error
+        bridge = db.session.query(Bridge).filter_by(mastodon_account_id=account_id, mastodon_host_id=masto_host.id).first()
+
+        if bridge:
+            session['bridge_id'] = bridge.id
+
         else:
             bridge = get_or_create_bridge()
+            bridge.mastodon_access_code = access_code
+            bridge.mastodon_user = username
+            bridge.mastodon_host = get_or_create_host(host)
+            bridge.mastodon_account_id = account_id
 
-        bridge.mastodon_access_code = access_code
-        bridge.mastodon_user = username
-        bridge.mastodon_host = get_or_create_host(host)
+            db.session.commit()
 
-        db.session.commit()
+            catch_up_mastodon(bridge)
 
-        catch_up_mastodon(bridge)
-
-        email_bridge_details(app, bridge)
+            email_bridge_details(app, bridge)
 
     return redirect(url_for('index'))
 
