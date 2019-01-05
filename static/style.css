@@ -34,13 +34,13 @@ form {
 
 /* Medium Devices, Desktops */
 @media only screen and (min-width : 992px) {
-    .center { width: 50%; padding: 10px;border: 0.6rem double; }
+    .center { width: 60%; padding: 10px;border: 0.6rem double; }
 
 }
 
 /* Large Devices, Wide Screens */
 @media only screen and (min-width : 1200px) {
-    .center { width: 50%; padding: 10px;border: 0.6rem double; }
+    .center { width: 60%; padding: 10px;border: 0.6rem double; }
 
 }
 
